@@ -1,0 +1,20 @@
+# Normaliza as quebras de linha: LF no repositório e na cópia de trabalho,
+# independente do sistema operacional de quem clona. Mantém o padrão definido
+# no .editorconfig.
+* text=auto eol=lf
+
+# Arquivos que devem manter CRLF por exigência do Windows
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binários: nunca normalizar
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.sqlite3 binary

@@ -1,0 +1,42 @@
+# O 365-Gym não é um pacote distribuível: por isso não há [build-system].
+# As dependências abaixo são declarativas; a instalação está em docs/setup.md.
+
+[project]
+name = "gym365"
+version = "0.1.0"
+description = "Plataforma web da 365 Boxe Gym"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=5.0,<6.0",
+    "django-environ>=0.11",
+    "psycopg[binary]>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6",
+    "pytest>=8.0",
+    "pytest-django>=4.8",
+    "pytest-cov>=5.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["migrations", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S", "DJ"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+# Vale a partir do momento em que o dono rodar `django-admin startproject gym365 .`
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "gym365.settings"
+python_files = ["test_*.py", "*_test.py"]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
