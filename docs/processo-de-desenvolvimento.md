@@ -137,9 +137,13 @@ não sai do Backlog — é ali que se descobre que o requisito não estava enten
 - Commits no formato convencional: `feat: registrar presença na chamada da aula`
 - PR sempre referencia a issue com `Closes #NN`, para o fechamento automático
 - **Todo PR recebe ao menos 1 aprovação de outro dev**, inclusive os do Tech Lead
-- `main` protegida: merge só com CI verde e aprovação. Sem exceção — é o RNF-08.
-  A proteção só pode ser ligada depois que a CI existir (issue #6) e o `ruff`
-  estiver limpo na `main`; até lá a regra vale por combinação
+- `main` protegida desde 16 / 10 / 2026: push direto bloqueado e PR com 1
+  aprovação obrigatória, inclusive para administradores
+- Só squash merge: cada issue vira um commit na `main`, e o título do PR vira a
+  mensagem do commit, então segue o formato convencional (`feat: ...`). A branch
+  é apagada depois do merge
+- O check de CI entra como obrigatório quando a CI existir (issue #6) e o `ruff`
+  estiver limpo na `main`. Sem exceção — é o RNF-08
 
 ## 7. Definição de pronto
 
