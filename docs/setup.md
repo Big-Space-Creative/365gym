@@ -1,8 +1,8 @@
 # Guia de Preparação do Ambiente de Desenvolvimento
 
-Data de referência: 2026-09-20
+Data de referência: 2026-09-20 (Atualizado: 2026-10-16)
 
-Este guia contém o passo a passo completo para configurar o ambiente de desenvolvimento do projeto 365-Gym a partir do zero.
+Este guia contém o passo a passo completo para reproduzir e configurar o ambiente de desenvolvimento do projeto **365-Gym** a partir do zero em uma máquina limpa.
 
 ---
 
@@ -13,13 +13,24 @@ Certifique-se de ter instalado em sua máquina:
 - **Python 3.12 ou superior:** verifique com `python --version` (ou `python3 --version`).
 - **Git:** para controle de versão local e remoto.
 - **uv (opcional, recomendado):** gerenciador rápido de pacotes e ambientes Python.
-- **PostgreSQL (opcional no desenvolvimento):** para testar localmente com o mesmo banco de produção, caso prefira não usar SQLite no dia a dia.
+- **PostgreSQL (opcional no desenvolvimento):** caso prefira utilizar o mesmo banco de dados de produção localmente, embora o SQLite seja suportado por padrão no desenvolvimento.
 
 ---
 
-## 2. Criar e Ativar o Ambiente Virtual
+## 2. Clonar o Repositório
 
-No diretório raiz do projeto (`gym365`):
+Se você ainda não clonou o repositório, faça o clone e acesse o diretório do projeto:
+
+```bash
+git clone https://github.com/Big-Space-Creative/365gym.git
+cd 365gym
+```
+
+---
+
+## 3. Criar e Ativar o Ambiente Virtual
+
+No diretório raiz do projeto:
 
 ### Windows (PowerShell)
 ```powershell
@@ -27,7 +38,10 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-*(Se o PowerShell bloquear a execução de scripts, execute previamente `Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned`)*
+*(Se o PowerShell bloquear a execução de scripts, execute previamente no terminal: `Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned`)*
+
+> **Nota sobre o nome do ambiente (`.venv` vs `venv`):**
+> O padrão recomendado no projeto é `.venv`, mas você também pode utilizar `venv` sem o ponto (`python -m venv venv` e `.\venv\Scripts\Activate.ps1`). Ambos são ignorados pelo Git (`.gitignore`) e pelo formatador/linter Ruff (`pyproject.toml`).
 
 ### Linux / macOS (Bash/Zsh)
 ```bash
@@ -37,9 +51,9 @@ source .venv/bin/activate
 
 ---
 
-## 3. Instalar as Dependências
+## 4. Instalar as Dependências
 
-Com o ambiente virtual ativado, você pode instalar as dependências de duas formas:
+Com o ambiente virtual ativado, você pode instalar as dependências de desenvolvimento de duas formas:
 
 ### Opção A: Usando `uv` (Recomendado)
 ```bash
@@ -54,7 +68,7 @@ pip install "django>=5.0,<6.0" django-environ "psycopg[binary]>=3.1" ruff pytest
 
 ---
 
-## 4. Configurar as Variáveis de Ambiente
+## 5. Configurar as Variáveis de Ambiente
 
 Crie o arquivo local `.env` a partir do modelo `.env.example`:
 
@@ -73,104 +87,38 @@ Abra o terminal com o ambiente ativado e execute:
 ```bash
 python -c "import secrets; print(secrets.token_urlsafe(50))"
 ```
-Copie a chave gerada e substitua o valor de `SECRET_KEY` no seu `.env`.
+Copie a chave gerada no console e preencha o valor de `SECRET_KEY` no seu `.env`.
+
+> **Importante:** A aplicação falha de forma explícita caso `SECRET_KEY` não seja fornecida no ambiente ou no `.env`.
 
 ---
 
-## 5. Inicializar o Projeto Django
+## 6. Aplicar as Migrações e Iniciar o Servidor
 
-Execute o comando para criar a estrutura base do projeto na raiz:
+O esqueleto inicial do projeto e o Custom User Model (`accounts.User`) já estão configurados e com as migrações criadas. Para inicializar o banco de dados e o servidor:
 
-```bash
-django-admin startproject gym365 .
-```
-
-> **Por que o pacote se chama `gym365` e não `365-Gym`?**
-> Em Python, identificadores de módulos e pacotes não podem começar com números nem conter hifens (`-`). Por isso, o repositório é `365-Gym` (ou diretório `gym365`), mas o pacote Python interno do Django é nomeado `gym365`.
-
----
-
-## 6. Criar os Apps Django dentro da pasta `apps/`
-
-Para manter a raiz organizada, todos os apps da aplicação devem residir no diretório `apps/`.
-
-Exemplo de criação do app `accounts` (ou app inicial correspondente):
-
-### Windows (PowerShell)
-```powershell
-New-Item -ItemType Directory -Path apps\accounts
-python manage.py startapp accounts apps\accounts
-```
-
-### Linux / macOS
-```bash
-mkdir -p apps/accounts
-python manage.py startapp accounts apps/accounts
-```
-
-> **Ajuste obrigatório no `apps.py`:**
-> Após criar um app dentro de `apps/<nome_do_app>`, edite o arquivo `apps/<nome_do_app>/apps.py` e altere o atributo `name` para incluir o prefixo do pacote:
->
-> ```python
-> class AccountsConfig(AppConfig):
->     default_auto_field = "django.db.models.BigAutoField"
->     name = "apps.accounts"
-> ```
-> Em seguida, registre `'apps.accounts'` no `INSTALLED_APPS` em `gym365/settings.py`.
-
----
-
-## 7. AVISO CRÍTICO: Custom User Model antes da primeira migração
-
-> **ATENÇÃO: LEIA ANTES DE EXECUTAR QUALQUER MIGRAÇÃO**
->
-> O Django recomenda fortemente configurar um Custom User Model logo no início do projeto, **antes de rodar a primeira migração (`migrate`)**.
->
-> Trocar o modelo de usuário depois que a tabela `auth_user` já foi criada e populada é um processo de refatoração complexo e propenso a inconsistências no banco de dados.
->
-> **Como proceder antes de rodar `python manage.py migrate`:**
-> 1. No app de usuários (ex.: `apps/accounts/models.py`), crie o modelo herdando de `AbstractUser`:
->    ```python
->    from django.contrib.auth.models import AbstractUser
->
->    class User(AbstractUser):
->        # Adicione campos customizados se necessário futuramente
->        pass
->    ```
-> 2. No arquivo `gym365/settings.py`, configure:
->    ```python
->    AUTH_USER_MODEL = "accounts.User"
->    ```
-> 3. Crie a migração inicial do app:
->    ```bash
->    python manage.py makemigrations accounts
->    ```
-
----
-
-## 8. Primeira Migração, Superusuário e Servidor de Desenvolvimento
-
-Após configurar o `AUTH_USER_MODEL` e o `INSTALLED_APPS`:
-
-1. Aplique as migrações no banco de dados:
+1. **Aplique as migrações no banco de dados:**
    ```bash
    python manage.py migrate
    ```
 
-2. Crie um superusuário para acessar o painel administrativo:
+2. **(Opcional) Crie um superusuário para acessar o painel administrativo:**
    ```bash
    python manage.py createsuperuser
    ```
 
-3. Inicie o servidor de desenvolvimento:
+3. **Inicie o servidor de desenvolvimento:**
    ```bash
    python manage.py runserver
    ```
-   Acesse a aplicação em `http://127.0.0.1:8000/` e o admin em `http://127.0.0.1:8000/admin/`.
+
+4. **Verifique no navegador:**
+   - Página inicial: `http://127.0.0.1:8000/` (retorna HTTP 200 com a tela de boas-vindas do Django em modo `DEBUG=True`)
+   - Painel de administração: `http://127.0.0.1:8000/admin/login/` (retorna HTTP 200 com o formulário de login)
 
 ---
 
-## 9. Comandos do Dia a Dia
+## 7. Comandos do Dia a Dia
 
 ### Verificação e formatação de código (Ruff)
 ```bash
@@ -182,6 +130,9 @@ ruff check --fix .
 
 # Formatar o código
 ruff format .
+
+# Verificar se a formatação está em conformidade
+ruff format --check .
 ```
 
 ### Execução de testes automatizados (Pytest)
@@ -195,7 +146,11 @@ pytest --cov=apps
 
 ---
 
-## 10. Banco de Dados: Desenvolvimento vs. Produção
+## 8. Banco de Dados: Desenvolvimento vs. Produção
 
-- **Desenvolvimento:** por padrão, a variável `DATABASE_URL` no `.env` aponta para `sqlite:///db.sqlite3`. Não requer nenhum serviço externo em execução.
-- **Produção:** configure `DATABASE_URL` para uma conexão PostgreSQL válida (ex.: `postgres://usuario:senha@host:5432/nome_banco`). O pacote `django-environ` lê a URL e configura o Django automaticamente, utilizando o driver `psycopg` (v3).
+- **Desenvolvimento (padrão):** a variável `DATABASE_URL` no `.env` aponta para `sqlite:///db.sqlite3`. Não requer nenhum serviço externo ou banco PostgreSQL instalado.
+- **Produção / PostgreSQL local:** configure `DATABASE_URL` para uma conexão PostgreSQL válida:
+  ```env
+  DATABASE_URL=postgres://usuario:senha@localhost:5432/gym365
+  ```
+  O Django utiliza o `django-environ` e o driver `psycopg` (v3) automaticamente a partir dessa URL, sem necessidade de alterar nenhuma linha de código.
